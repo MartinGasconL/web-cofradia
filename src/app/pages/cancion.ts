@@ -4,9 +4,11 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DataService, Parte, Track, TRACKS, TRACK_LABEL, TRACK_SHORT } from '../data.service';
 import { AudioEngine } from '../audio-engine';
+import { InfoService } from '../info/info.service';
+import { InfoView } from '../info/info-view';
 
 @Component({
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, InfoView],
   template: `
 @if (song(); as s) {
 <a class="back" routerLink="/repertorio">← Repertorio</a>
@@ -43,8 +45,17 @@ import { AudioEngine } from '../audio-engine';
   @else { <small class="ok">Pulsa una parte del cronograma para escuchar ese fragmento.</small> }
 </section>
 
-<div class="tabs"><b>Canción</b><span>Práctica <em>Fase 2</em></span><span>Información</span></div>
+<div class="tabs" role="tablist">
+  <button type="button" role="tab" [class.on]="tab() === 'cancion'" [attr.aria-selected]="tab() === 'cancion'" (click)="tab.set('cancion')">Canción</button>
+  <span>Práctica <em>Fase 2</em></span>
+  <button type="button" role="tab" [class.on]="tab() === 'info'" [attr.aria-selected]="tab() === 'info'" (click)="tab.set('info')">Información</button>
+</div>
 
+@if (tab() === 'info') {
+<section class="info-page card">
+  <app-info-view [markdown]="info.content()" />
+</section>
+} @else {
 <div class="song-detail-grid">
   <section class="timeline card">
     <header>
@@ -89,6 +100,7 @@ import { AudioEngine } from '../audio-engine';
   </aside>
 </div>
 }
+}
   `,
   styleUrl: './pages.scss',
 })
@@ -96,6 +108,9 @@ export class Cancion implements OnInit, OnDestroy {
   private data = inject(DataService);
   private route = inject(ActivatedRoute);
   readonly engine = inject(AudioEngine);
+  readonly info = inject(InfoService);
+
+  tab = signal<'cancion' | 'info'>('cancion');
 
   labels = TRACK_LABEL;
   short = TRACK_SHORT;
@@ -136,6 +151,7 @@ export class Cancion implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.info.load().subscribe({ error: () => {} });
     const load = () => {
       const s = this.song();
       if (s) this.engine.loadSong(s, t => this.data.audioUrl(s.id, t));
