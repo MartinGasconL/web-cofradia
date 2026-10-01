@@ -205,7 +205,7 @@ export class EstudioForm implements OnInit, OnDestroy {
     this.editing = !!id;
     this.song = existing
       ? structuredClone(existing)
-      : { id: 0, title: '', description: '', procesion: false, exhibicion: false, qa: false, bpm: 90, duration: 180, draft: true, tracks: {}, partes: [], ramas: [] };
+      : { id: 0, title: '', description: '', procesion: false, exhibicion: false, qa: false, bpm: 90, duration: 180, draft: true, info: '', tracks: {}, partes: [], ramas: [] };
     this.keepDraft.set(this.song.draft);
     if (existing) { this.trackStates.set(structuredClone(existing).tracks); }
     if (id && !existing) {

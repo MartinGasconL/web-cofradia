@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
 import { renderMarkdown } from './markdown';
 
 /** Renderiza Markdown con el estilo de la web. Se usa en la pestaña Información y en la vista previa del editor. */
@@ -38,7 +39,13 @@ import { renderMarkdown } from './markdown';
 .md-doc pre{background:#2a1418;color:#f7e9dc;padding:14px 16px;border-radius:10px;overflow:auto;margin:0 0 16px}
 .md-doc pre code{background:none;color:inherit;padding:0}
 .md-doc hr{border:0;height:1px;background:var(--border);margin:28px 0}
-.md-doc img{max-width:100%;height:auto;border-radius:10px;border:1px solid var(--border)}
+.md-doc .md-media{display:block;margin:18px 0}
+.md-doc .md-media img,.md-doc .md-media video{display:block;max-width:100%;height:auto;border-radius:12px;border:1px solid var(--border);background:#2a1418;box-shadow:0 2px 10px #0000001a}
+.md-doc .md-embed iframe{display:block;width:100%;aspect-ratio:16/9;border:1px solid var(--border);border-radius:12px;background:#2a1418}
+.md-doc .md-audio{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.md-doc .md-audio audio{display:block;width:100%}
+.md-doc .md-cap{display:block;margin-top:8px;font-size:12px;color:var(--muted);text-align:center}
+.md-doc .md-audio .md-cap{margin:0 0 8px;text-align:left;font-weight:700;color:var(--ink);font-size:13px}
 .md-doc table{width:100%;border-collapse:separate;border-spacing:0;margin:0 0 18px;border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:14px}
 .md-doc th{background:#faf6f0;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.6px;text-align:left}
 .md-doc th,.md-doc td{padding:10px 14px;border-bottom:1px solid var(--border)}
@@ -49,5 +56,10 @@ import { renderMarkdown } from './markdown';
 export class InfoView {
   markdown = input<string>('');
   emptyText = input('Aún no hay información publicada.');
-  html = computed(() => renderMarkdown(this.markdown()));
+  private sanitizer = inject(DomSanitizer);
+  // renderMarkdown ya sanea con DOMPurify; el saneador de Angular eliminaría vídeo, audio y el iframe de YouTube.
+  html = computed(() => {
+    const html = renderMarkdown(this.markdown());
+    return html ? this.sanitizer.bypassSecurityTrustHtml(html) : '';
+  });
 }

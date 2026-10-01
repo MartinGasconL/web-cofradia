@@ -72,6 +72,8 @@ export interface Song {
   bpm: number;
   duration: number;
   draft: boolean;
+  /** Información de la canción en Markdown (imágenes, vídeo y audio incrustables). */
+  info: string;
   tracks: Partial<Record<Track, TrackInfo>>;
   partes: Parte[];
   ramas: Rama[];
@@ -82,7 +84,7 @@ type ApiSectionTrack = { type: string; startSeconds: number; endSeconds: number 
 type ApiSection = { title: string; note: string; startSeconds: number; endSeconds: number; color: string; question: boolean; answer: boolean; desfase: boolean; branchKey: string | null; branchFrom: number | null; branchTo: number | null; branchActive: boolean; tracks: ApiSectionTrack[] };
 type ApiSong = {
   id: number; title: string; description: string; bpm: number; durationSeconds: number;
-  procession: boolean; exhibition: boolean; draft: boolean; tracks: ApiTrack[]; sections: ApiSection[];
+  procession: boolean; exhibition: boolean; draft: boolean; info: string | null; tracks: ApiTrack[]; sections: ApiSection[];
 };
 
 @Injectable({ providedIn: 'root' })
@@ -142,6 +144,13 @@ export class DataService {
     return this.http.post<ApiTrack>(`${this.base}/${songId}/tracks/${track.toUpperCase()}`, body);
   }
 
+  /** Sube una imagen, vídeo o audio para incrustarlo en la información de la canción. Devuelve la URL a usar en el Markdown. */
+  uploadInfoMedia(songId: number, file: File) {
+    const body = new FormData();
+    body.append('file', file, file.name);
+    return this.http.post<{ url: string; kind: 'image' | 'video' | 'audio'; name: string }>(`${this.base}/${songId}/info-media`, body);
+  }
+
   /** URL de streaming de una pista (con soporte de Range en el backend). */
   audioUrl(songId: number, track: Track) {
     return `${this.base}/${songId}/tracks/${track.toUpperCase()}/audio`;
@@ -189,6 +198,7 @@ export class DataService {
       exhibicion: row.exhibition,
       qa: row.sections.some(s => s.question || s.answer),
       draft: row.draft,
+      info: row.info || '',
       tracks,
       partes: row.sections.filter(s => !s.branchKey).map(parte),
       ramas: [...ramas.values()],
@@ -219,6 +229,7 @@ export class DataService {
       procession: song.procesion,
       exhibition: song.exhibicion,
       draft: song.draft ?? false,
+      info: song.info ?? '',
       sections: [
         ...song.partes.map(p => section(p, null, null, null, true)),
         ...(song.ramas ?? []).flatMap(r => r.partes.map(p => section(p, r.id, r.desde, r.hasta, r.activa !== false))),

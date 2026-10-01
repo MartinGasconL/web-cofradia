@@ -2,10 +2,9 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { DataService, Song } from '../data.service';
-import { InfoEditor } from '../info/info-editor';
 
 @Component({
-  imports: [CommonModule, RouterLink, InfoEditor],
+  imports: [CommonModule, RouterLink],
   template: `
 <header class="head">
   <div>
@@ -39,8 +38,6 @@ import { InfoEditor } from '../info/info-editor';
   }
 </section>
 @if (!songs().length) { <div class="no-parts">Aún no hay canciones oficiales.</div> }
-
-<app-info-editor class="info-block" />
   `,
   styleUrl: './pages.scss',
 })

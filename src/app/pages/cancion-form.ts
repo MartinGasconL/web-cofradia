@@ -2,10 +2,12 @@ import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Observable, map, of, throwError } from 'rxjs';
 import { DataService, Parte, ParteTrack, Song, TrackInfo, TRACKS, Track, TRACK_LABEL, TRACK_SHORT } from '../data.service';
 import { RecorderDialog } from './recorder-dialog';
 import { PartRangeBar, TimeRange } from './part-range-bar';
 import { AudioEngine, TrackWindow } from '../audio-engine';
+import { InfoEditor } from '../info/info-editor';
 
 const COLORS = ['#910000', '#6d28d9', '#0e7490', '#c2410c', '#15803d', '#a16207'];
 const LABEL = TRACK_LABEL;
@@ -14,7 +16,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 @Component({
-  imports: [CommonModule, FormsModule, RouterLink, RecorderDialog, PartRangeBar],
+  imports: [CommonModule, FormsModule, RouterLink, RecorderDialog, PartRangeBar, InfoEditor],
   template: `
 @if (!ready()) {
   <a class="back" routerLink="/administracion/canciones">← Canciones</a>
@@ -44,6 +46,8 @@ const STATUS_LABEL: Record<string, string> = {
         <label><input [(ngModel)]="song.exhibicion" type="checkbox"> Exhibición</label>
       </div>
     </section>
+
+    <app-info-editor [(markdown)]="song.info" [ensureSong]="ensureSaved" />
 
     <section class="card section">
       <h2>Pistas</h2>
@@ -282,7 +286,7 @@ export class CancionForm implements OnInit, OnDestroy {
     this.editing = !!id;
     this.song = existing
       ? structuredClone(existing)
-      : { id: 0, title: '', description: '', procesion: false, exhibicion: false, qa: false, bpm: 90, duration: 180, draft: false, tracks: {}, partes: [], ramas: [] };
+      : { id: 0, title: '', description: '', procesion: false, exhibicion: false, qa: false, bpm: 90, duration: 180, draft: false, info: '', tracks: {}, partes: [], ramas: [] };
     if (existing) this.trackStates.set(structuredClone(existing).tracks);
     if (id && !existing) {
       this.data.refresh(id).subscribe(song => {
@@ -342,6 +346,17 @@ export class CancionForm implements OnInit, OnDestroy {
     this.recordingFor.set(null);
     this.upload(track, payload.blob, `grabacion-${track}.${payload.ext}`);
   }
+
+  /** Id de la canción; si es nueva la crea antes (para poder subir archivos incrustados a la información). */
+  ensureSaved = (): Observable<number> => {
+    if (this.song.id) return of(this.song.id);
+    if (!this.song.title.trim()) return throwError(() => new Error('Ponle un título a la canción antes de subir archivos.'));
+    return this.data.create(this.song).pipe(map(saved => {
+      this.song.id = saved.id;
+      this.editing = true;
+      return saved.id;
+    }));
+  };
 
   private upload(track: Track, blob: Blob, filename: string) {
     this.saveError.set(null);

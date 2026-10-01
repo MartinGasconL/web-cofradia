@@ -4,7 +4,6 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DataService, Parte, Track, TRACKS, TRACK_LABEL, TRACK_SHORT } from '../data.service';
 import { AudioEngine } from '../audio-engine';
-import { InfoService } from '../info/info.service';
 import { InfoView } from '../info/info-view';
 
 @Component({
@@ -53,7 +52,7 @@ import { InfoView } from '../info/info-view';
 
 @if (tab() === 'info') {
 <section class="info-page card">
-  <app-info-view [markdown]="info.content()" />
+  <app-info-view [markdown]="s.info" emptyText="Esta canción aún no tiene información." />
 </section>
 } @else {
 <div class="song-detail-grid">
@@ -108,7 +107,6 @@ export class Cancion implements OnInit, OnDestroy {
   private data = inject(DataService);
   private route = inject(ActivatedRoute);
   readonly engine = inject(AudioEngine);
-  readonly info = inject(InfoService);
 
   tab = signal<'cancion' | 'info'>('cancion');
 
@@ -151,7 +149,6 @@ export class Cancion implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.info.load().subscribe({ error: () => {} });
     const load = () => {
       const s = this.song();
       if (s) this.engine.loadSong(s, t => this.data.audioUrl(s.id, t));
