@@ -1,0 +1,2 @@
+import { Injectable, signal } from '@angular/core';
+@Injectable({providedIn:'root'}) export class AuthService { user=signal<string|null>(sessionStorage.getItem('cofradia.user')); login(username:string,password:string){if(username!=='admin'||password!=='admin')return false;sessionStorage.setItem('cofradia.user',username);this.user.set(username);return true} logout(){sessionStorage.removeItem('cofradia.user');this.user.set(null)} }
